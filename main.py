@@ -15,7 +15,7 @@ sorting = [{"timestamp": "last_edited_time", "direction": "descending"}]
 filter = {"and": [{"property": "Frequency", "select": {"is_not_empty": True}},
                   {"property": "Complete", "checkbox": {"equals": True}}]}
 
-request_interval_in_seconds = str(os.environ["REQUEST_INTERVAL_IN_SECONDS"])
+request_interval_in_seconds = int(os.environ["REQUEST_INTERVAL_IN_SECONDS"])
 
 
 def get_tasks(request):
@@ -60,6 +60,12 @@ def is_do_date_empty(task):
     else:
         return False
 
+def is_due_date_empty(task):
+    if task["properties"]["Due Date"]["date"] == {}:
+        return True
+    else:
+        return False
+
 
 def calculate_new_do_date(task):
     frequency = task["properties"]["Frequency"]["select"]["name"]
@@ -70,7 +76,9 @@ def calculate_new_do_date(task):
 
 def update_page(task):
     new_due_date = calculate_new_due_date(task)
-    if is_do_date_empty(task):
+    if is_due_date_empty(task):
+        return
+    elif is_do_date_empty(task):
         notion.pages.update(page_id=task["id"], properties={"Due Date": {"date": {"start": new_due_date}},
                                                             "Complete": {"checkbox": False}})
     else:
