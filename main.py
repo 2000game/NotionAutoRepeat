@@ -4,8 +4,8 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from notion_client import Client
 
-secret = os.environ["NOTION_SECRET"]
-database_id = os.environ["NOTION_DATABASE_ID"]
+secret = str(os.environ["NOTION_SECRET"])
+database_id = (os.environ["NOTION_DATABASE_ID"])
 
 print(secret)
 print(type(secret))
