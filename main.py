@@ -15,7 +15,7 @@ sorting = [{"timestamp": "last_edited_time", "direction": "descending"}]
 filter = {"and": [{"property": "Frequency", "select": {"is_not_empty": True}},
                   {"property": "Complete", "checkbox": {"equals": True}}]}
 
-request_interval_in_seconds = str(os.environ["REQUEST_INTERVAL_IN_SECONDS"])
+request_interval_in_seconds = int(os.environ["REQUEST_INTERVAL_IN_SECONDS"])
 
 
 def get_tasks(request):
