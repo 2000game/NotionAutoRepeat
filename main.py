@@ -8,6 +8,7 @@ secret = os.environ["NOTION_SECRET"]
 database_id = os.environ["NOTION_DATABASE_ID"]
 
 print(secret)
+print(type(secret))
 
 notion = Client(auth=secret)
 sorting = [{"timestamp": "last_edited_time", "direction": "descending"}]
