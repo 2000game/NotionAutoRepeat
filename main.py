@@ -7,6 +7,8 @@ from notion_client import Client
 secret = os.environ["NOTION_SECRET"]
 database_id = os.environ["NOTION_DATABASE_ID"]
 
+print(secret)
+
 notion = Client(auth=secret)
 sorting = [{"timestamp": "last_edited_time", "direction": "descending"}]
 filter = {"and": [{"property": "Frequency", "select": {"is_not_empty": True}},
