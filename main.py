@@ -3,7 +3,6 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 from notion_client import Client
-
 secret = str(os.environ["NOTION_SECRET"])
 database_id = (os.environ["NOTION_DATABASE_ID"])
 
@@ -55,13 +54,13 @@ def calculate_new_due_date(task):
 
 
 def is_do_date_empty(task):
-    if task["properties"]["Do Date"]["date"] == {}:
+    if task["properties"]["Do Date"]["date"] is None:
         return True
     else:
         return False
 
 def is_due_date_empty(task):
-    if task["properties"]["Due Date"]["date"] == {}:
+    if task["properties"]["Due Date"]["date"] is None:
         return True
     else:
         return False
