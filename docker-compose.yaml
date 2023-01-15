@@ -1,0 +1,6 @@
+services:
+  NotionAutoRepeat:
+    image: notionautorepeat
+    build:
+        context: .
+        dockerfile: Dockerfile
