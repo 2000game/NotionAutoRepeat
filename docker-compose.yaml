@@ -1,8 +1,5 @@
 services:
   NotionAutoRepeat:
-    environment:
-      - NOTION_SECRET = secret
-      - NOTION_DATABASE_ID = database_id
     image: notionautorepeat
     build:
         context: .
