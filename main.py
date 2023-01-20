@@ -3,17 +3,23 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 from notion_client import Client
+
 secret = str(os.environ["NOTION_SECRET"])
 database_id = (os.environ["NOTION_DATABASE_ID"])
 
-print(secret)
-print(type(secret))
-
 notion = Client(auth=secret)
 sorting = [{"timestamp": "last_edited_time", "direction": "descending"}]
-filter = {"and": [{"property": "Frequency", "select": {"is_not_empty": True}},
-                  {"property": "Complete", "checkbox": {"equals": True}}]}
+due_date_filter = {"and": [{"property": "Frequency", "select": {"is_not_empty": True}},
+                           {"property": "Complete", "checkbox": {"equals": True}}]}
 
+recursive_top_level_filter = {"and": [{"property": "Top Level Task", "relation": {"is_empty": True}},
+                                               {"property": "Parent Top Level Task",
+                                                "rollup": {"none": {"relation": {"is_empty": True}}}}]}
+
+recursive_top_level_filter_buggy = {"and": [{"property": "Top Level Task", "relation": {"is_empty": True}},
+                                      {"and": [{"property": "Parent Task", "relation": {"is_not_empty": True}},
+                                               {"property": "Parent Top Level Task",
+                                                "rollup": {"none": {"relation": {"is_empty": True}}}}]}]}
 request_interval_in_seconds = int(os.environ["REQUEST_INTERVAL_IN_SECONDS"])
 
 
@@ -22,6 +28,7 @@ def get_tasks(request):
     for page in request["results"]:
         tasks.append(page)
     return tasks
+
 
 def update_date_from_frequency(date, frequency):
     if frequency == "Daily":
@@ -43,37 +50,31 @@ def update_date_from_frequency(date, frequency):
     return new_date
 
 
-
 def calculate_new_due_date(task):
     frequency = task["properties"]["Frequency"]["select"]["name"]
     old_due_date = datetime.strptime(task["properties"]["Due Date"]["date"]["start"], "%Y-%m-%d")
-
     return update_date_from_frequency(old_due_date, frequency)
-
-
 
 
 def is_do_date_empty(task):
     if task["properties"]["Do Date"]["date"] is None:
         return True
-    else:
-        return False
+    return False
+
 
 def is_due_date_empty(task):
     if task["properties"]["Due Date"]["date"] is None:
         return True
-    else:
-        return False
+    return False
 
 
 def calculate_new_do_date(task):
     frequency = task["properties"]["Frequency"]["select"]["name"]
     old_do_date = datetime.strptime(task["properties"]["Do Date"]["date"]["start"], "%Y-%m-%d")
-
     return update_date_from_frequency(old_do_date, frequency)
 
 
-def update_page(task):
+def update_page_dates(task):
     new_due_date = calculate_new_due_date(task)
     if is_due_date_empty(task):
         return
@@ -87,12 +88,33 @@ def update_page(task):
                                                             "Complete": {"checkbox": False}})
 
 
+def update_top_level_task_field(task):
+    if task["properties"]["Parent Task"]["relation"]:
+        parent_top_level_task_ids = []
+        for parent_top_level_task in task["properties"]["Parent Top Level Task"]["rollup"]["array"]:
+            for relation_field in parent_top_level_task["relation"]:
+                parent_top_level_task_ids.append(relation_field)
+        notion.pages.update(page_id=task["id"], properties={"Top Level Task": {"relation": parent_top_level_task_ids}})
+
+
+def update_due_dates():
+    request = notion.databases.query(database_id=database_id, sorts=sorting, filter=due_date_filter)
+    tasks = get_tasks(request)
+    for task in tasks:
+        update_page_dates(task)
+
+
+def update_top_level_task_dates():
+    request = notion.databases.query(database_id=database_id, sorts=sorting, filter=recursive_top_level_filter)
+    tasks = get_tasks(request)
+    for task in tasks:
+        update_top_level_task_field(task)
+
+
 def main():
     while True:
-        request = notion.databases.query(database_id=database_id, sorts=sorting, filter=filter)
-        tasks = get_tasks(request)
-        for task in tasks:
-            update_page(task)
+        update_due_dates()
+        update_top_level_task_dates()
         os.system("sleep {}".format(request_interval_in_seconds))
 
 
