@@ -1,9 +1,9 @@
 services:
   NotionAutoRepeat:
     environment:
-      - NOTION_SECRET = secret
-      - NOTION_DATABASE_ID = database_id
-      - REQUEST_INTERVAL_IN_SECONDS = 60
+      - NOTION_SECRET
+      - NOTION_DATABASE_ID
+      - REQUEST_INTERVAL_IN_SECONDS
     image: notionautorepeat
     build:
         context: .
