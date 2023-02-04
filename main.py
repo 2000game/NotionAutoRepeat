@@ -139,6 +139,8 @@ def update_top_level_task_dates():
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+    logging.info("Starting script")
     while True:
         try:
             update_due_dates()
