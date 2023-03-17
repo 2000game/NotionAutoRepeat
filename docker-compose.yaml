@@ -5,6 +5,7 @@ services:
       - NOTION_DATABASE_ID
       - REQUEST_INTERVAL_IN_SECONDS
     image: notionautorepeat
+    env_file: .env
     build:
         context: .
         dockerfile: Dockerfile
