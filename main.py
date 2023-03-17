@@ -9,8 +9,8 @@ import logging
 
 secret = None
 database_id = None
+notion = None
 
-notion = Client(auth=secret)
 sorting = [{"timestamp": "last_edited_time", "direction": "descending"}]
 due_date_filter = {"and": [{"property": "Frequency", "select": {"is_not_empty": True}},
                            {"property": "Complete", "checkbox": {"equals": True}}]}
@@ -149,6 +149,8 @@ def main():
     global secret
     secret = str(os.environ["NOTION_SECRET"])
     global database_id
+    global notion
+    notion = Client(auth=secret)
     database_id = (os.environ["NOTION_DATABASE_ID"])
     logging.basicConfig(level=logging.INFO)
     logging.info("Starting script")
