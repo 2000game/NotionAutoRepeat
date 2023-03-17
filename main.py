@@ -1,13 +1,14 @@
 import os
 from datetime import datetime
 
+import notion_client.errors
 from dateutil.relativedelta import relativedelta
 from notion_client import Client
 from notion_client.errors import APIResponseError
 import logging
 
-secret = str(os.environ["NOTION_SECRET"])
-database_id = (os.environ["NOTION_DATABASE_ID"])
+secret = None
+database_id = None
 
 notion = Client(auth=secret)
 sorting = [{"timestamp": "last_edited_time", "direction": "descending"}]
@@ -24,6 +25,11 @@ recursive_top_level_filter_buggy = {"and": [{"property": "Top Level Task", "rela
                                                       "rollup": {"none": {"relation": {"is_empty": True}}}}]}]}
 request_interval_in_seconds = int(os.environ["REQUEST_INTERVAL_IN_SECONDS"])
 
+report_task_id = "f3d2b1d0-1b1a-4b1e-8b1a-1b1a1b1a1b1a"
+
+report_filter_task = {"and": [{"property": "Compelte", "checkbox": {"equals": True}},
+                              {"property": "Reported", "checkbox": {"eqauls": False}}]}
+
 
 def get_tasks(request):
     tasks = []
@@ -32,7 +38,7 @@ def get_tasks(request):
     return tasks
 
 
-def update_date_from_frequency(date, frequency):
+def update_date_from_frequency(date: datetime, frequency: str):
     if frequency == "Daily":
         new_date = datetime.strftime(date + relativedelta(days=1), "%Y-%m-%d")
     elif frequency == "Weekly":
@@ -40,15 +46,15 @@ def update_date_from_frequency(date, frequency):
     elif frequency == "Biweekly":
         new_date = datetime.strftime(date + relativedelta(weeks=2), "%Y-%m-%d")
     elif frequency == "Monthly":
-        new_date = datetime.strftime(date + relativedelta(month=1), "%Y-%m-%d")
+        new_date = datetime.strftime(date + relativedelta(months=1), "%Y-%m-%d")
     elif frequency == "Bimonthly":
-        new_date = datetime.strftime(date + relativedelta(month=2), "%Y-%m-%d")
+        new_date = datetime.strftime(date + relativedelta(months=2), "%Y-%m-%d")
     elif frequency == "Quarterly":
-        new_date = datetime.strftime(date + relativedelta(month=3), "%Y-%m-%d")
+        new_date = datetime.strftime(date + relativedelta(months=3), "%Y-%m-%d")
     elif frequency == "Semiannually":
-        new_date = datetime.strftime(date + relativedelta(month=6), "%Y-%m-%d")
+        new_date = datetime.strftime(date + relativedelta(months=6), "%Y-%m-%d")
     elif frequency == "Annually":
-        new_date = datetime.strftime(date + relativedelta(year=1), "%Y-%m-%d")
+        new_date = datetime.strftime(date + relativedelta(years=1), "%Y-%m-%d")
     return new_date
 
 
@@ -94,7 +100,7 @@ def update_page_dates(task):
         logging.error(e)
         logging.error(task["id"])
         logging.error("Failed to update page dates")
-        raise e
+        raise
 
 
 def update_top_level_task_field(task):
@@ -111,34 +117,28 @@ def update_top_level_task_field(task):
             logging.error(e)
             logging.error(task["id"])
             logging.error(parent_top_level_task_ids)
-            raise e
+            raise
 
 
 def update_due_dates():
-    try:
-        request = notion.databases.query(database_id=database_id, sorts=sorting, filter=due_date_filter)
-        tasks = get_tasks(request)
-        for task in tasks:
-            update_page_dates(task)
-    except APIResponseError as e:
-        logging.error(e)
-        logging.error("Failed to update due dates")
-        raise e
+    request = notion.databases.query(database_id=database_id, sorts=sorting, filter=due_date_filter)
+    tasks = get_tasks(request)
+    for task in tasks:
+        update_page_dates(task)
 
 
 def update_top_level_task_dates():
-    try:
-        request = notion.databases.query(database_id=database_id, sorts=sorting, filter=recursive_top_level_filter)
-        tasks = get_tasks(request)
-        for task in tasks:
-            update_top_level_task_field(task)
-    except APIResponseError as e:
-        logging.error(e)
-        logging.error("Failed to update top level task dates")
-        raise e
+    request = notion.databases.query(database_id=database_id, sorts=sorting, filter=recursive_top_level_filter)
+    tasks = get_tasks(request)
+    for task in tasks:
+        update_top_level_task_field(task)
 
 
 def main():
+    global secret
+    secret = str(os.environ["NOTION_SECRET"])
+    global database_id
+    database_id = (os.environ["NOTION_DATABASE_ID"])
     logging.basicConfig(level=logging.INFO)
     logging.info("Starting script")
     while True:
@@ -149,7 +149,11 @@ def main():
         except APIResponseError as e:
             logging.error(e)
             logging.error("Failed to update due dates")
-            os.system("sleep {}".format(request_interval_in_seconds*4))
+            os.system("sleep {}".format(request_interval_in_seconds * 4))
+        except notion_client.errors.HTTPResponseError as e:
+            logging.error(e)
+            logging.error("Failed to update due dates")
+            os.system("sleep {}".format(request_interval_in_seconds * 4))
 
 
 if __name__ == "__main__":
