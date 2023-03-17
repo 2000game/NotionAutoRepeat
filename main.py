@@ -25,10 +25,10 @@ recursive_top_level_filter_buggy = {"and": [{"property": "Top Level Task", "rela
                                                       "rollup": {"none": {"relation": {"is_empty": True}}}}]}]}
 request_interval_in_seconds = int(os.environ["REQUEST_INTERVAL_IN_SECONDS"])
 
-report_task_id = "f3d2b1d0-1b1a-4b1e-8b1a-1b1a1b1a1b1a"
+report_task_id = '0aadbb93-4803-4212-ab79-f22c23bc529e'
 
-report_filter_task = {"and": [{"property": "Compelte", "checkbox": {"equals": True}},
-                              {"property": "Reported", "checkbox": {"eqauls": False}}]}
+report_filter_task = {"and": [{"property": "Complete", "checkbox": {"equals": True}},
+                              {"property": "Reported", "checkbox": {"equals": False}}]}
 
 
 def get_tasks(request):
@@ -96,10 +96,7 @@ def update_page_dates(task):
                                                                 "Deadline": {"date": {"start": new_do_date}},
                                                                 "Complete": {"checkbox": False}})
         logging.info("Updated task: " + task["id"])
-    except APIResponseError as e:
-        logging.error(e)
-        logging.error(task["id"])
-        logging.error("Failed to update page dates")
+    except notion_client.errors as e:
         raise
 
 
@@ -113,11 +110,16 @@ def update_top_level_task_field(task):
             notion.pages.update(page_id=task["id"],
                                 properties={"Top Level Task": {"relation": parent_top_level_task_ids}})
             logging.info("Updated top level task field: " + task["id"])
-        except APIResponseError as e:
-            logging.error(e)
-            logging.error(task["id"])
-            logging.error(parent_top_level_task_ids)
+        except notion_client.errors as e:
             raise
+
+
+def update_reported_field(task):
+    try:
+        notion.pages.update(page_id=task["id"], properties={"Reported": {"checkbox": False}})
+        logging.info("Updated reported field: " + task["id"])
+    except notion_client.errors as e:
+        raise
 
 
 def update_due_dates():
@@ -125,6 +127,8 @@ def update_due_dates():
     tasks = get_tasks(request)
     for task in tasks:
         update_page_dates(task)
+        if task["id"] == report_task_id:
+            update_reported_fields()
 
 
 def update_top_level_task_dates():
@@ -132,6 +136,13 @@ def update_top_level_task_dates():
     tasks = get_tasks(request)
     for task in tasks:
         update_top_level_task_field(task)
+
+
+def update_reported_fields():
+    request = notion.databases.query(database_id=database_id, sorts=sorting, filter=report_filter_task)
+    tasks = get_tasks(request)
+    for task in tasks:
+        update_reported_field(task)
 
 
 def main():
