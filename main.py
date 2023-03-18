@@ -116,7 +116,7 @@ def update_top_level_task_field(task):
 
 def update_reported_field(task):
     try:
-        notion.pages.update(page_id=task["id"], properties={"Reported": {"checkbox": False}})
+        notion.pages.update(page_id=task["id"], properties={"Reported": {"checkbox": True}})
         logging.info("Updated reported field: " + task["id"])
     except notion_client.errors as e:
         raise
