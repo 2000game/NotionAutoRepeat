@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+import httpcore
 import notion_client.errors
 from dateutil.relativedelta import relativedelta
 from notion_client import Client
@@ -164,6 +165,10 @@ def main():
             logging.error("Failed to update due dates")
             os.system("sleep {}".format(request_interval_in_seconds * 4))
         except notion_client.errors.HTTPResponseError as e:
+            logging.error(e)
+            logging.error("Failed to update due dates")
+            os.system("sleep {}".format(request_interval_in_seconds * 4))
+        except httpcore.RemoteProtocolError as e:
             logging.error(e)
             logging.error("Failed to update due dates")
             os.system("sleep {}".format(request_interval_in_seconds * 4))
