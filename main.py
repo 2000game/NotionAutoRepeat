@@ -172,6 +172,10 @@ def main():
             logging.error(e)
             logging.error("Failed to update due dates")
             os.system("sleep {}".format(request_interval_in_seconds * 4))
+        except e:
+            logging.error(e)
+            logging.error("Failed to update due dates")
+            os.system("sleep {}".format(request_interval_in_seconds * 4))
 
 
 if __name__ == "__main__":
