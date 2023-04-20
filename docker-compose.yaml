@@ -1,5 +1,6 @@
 services:
   NotionAutoRepeat:
+    restart: always
     environment:
       - NOTION_SECRET
       - NOTION_DATABASE_ID
